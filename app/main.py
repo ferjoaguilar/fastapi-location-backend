@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, IPvAnyAddress
 import requests #type: ignore
 
 
@@ -14,11 +15,14 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type", "X-API-Key"],
 )
 
-@app.get("/")
-def read_root():
-    response_ip = requests.get('https://api.ipify.org?format=json')
+class IpSchema(BaseModel):
+    ip_address: IPvAnyAddress
 
-    response_location = requests.get(f'https://api.ipquery.io/{response_ip.json()["ip"]}')
+@app.get("/")
+def read_root(ip_address: IpSchema = Query(..., title="IP Address", description="IP Address to get location")):
+    ip = ip_address.ip_address
+
+    response_location = requests.get(f'https://api.ipquery.io/{ip}')
 
     return response_location.json()
 
